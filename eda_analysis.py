@@ -182,6 +182,41 @@ def plot_heavy_load_rate(df: pd.DataFrame, output_dir: Path) -> None:
     save_fig(output_dir / "heavy_load_rate_by_hour.png")
 
 
+def plot_comprehensive_lineplot(df: pd.DataFrame, output_dir: Path) -> None:
+    # Ensure we have a datetime index
+    if not isinstance(df.index, pd.DatetimeIndex):
+        return
+    
+    # Select numeric columns
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    
+    # If no numeric columns, return
+    if not numeric_columns:
+        return
+    
+    # Determine optimal subplot layout
+    n_cols = min(3, len(numeric_columns))
+    n_rows = (len(numeric_columns) + n_cols - 1) // n_cols
+    
+    # Create figure with subplots
+    plt.figure(figsize=(16, 4 * n_rows))
+    
+    # Plot each numeric column
+    for i, column in enumerate(numeric_columns, 1):
+        plt.subplot(n_rows, n_cols, i)
+        plt.plot(df.index, df[column], label=column)
+        plt.title(f'Time Series: {column}')
+        plt.xlabel('Timestamp')
+        plt.ylabel('Value')
+        plt.xticks(rotation=45)
+        plt.legend()
+        plt.tight_layout()
+    
+    # Save the comprehensive plot
+    plt.savefig(output_dir / "comprehensive_lineplot.png", dpi=150, bbox_inches='tight')
+    plt.close()
+
+
 def run_eda(json_path: Path, output_dir: Path) -> None:
     sns.set_context("talk")
     sns.set_style("whitegrid")
@@ -201,6 +236,7 @@ def run_eda(json_path: Path, output_dir: Path) -> None:
     plot_energy_flow(df, output_dir)
     plot_economics(df, output_dir)
     plot_heavy_load_rate(df, output_dir)
+    plot_comprehensive_lineplot(df, output_dir)
 
 
 if __name__ == "__main__":
