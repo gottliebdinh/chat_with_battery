@@ -1,5 +1,7 @@
 import pandas as pd
 import json
+import requests
+
 
 from ollama import chat
 from ollama import ChatResponse
@@ -8,6 +10,10 @@ from ollama import ChatResponse
 # Load your JSON as DataFrame
 df = pd.read_json("data/day1.json")
 df['timestamp'] = pd.to_datetime(df['timestamp'])
+
+weather_data = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.1374&longitude=11.5755&daily=sunshine_duration,daylight_duration&timezone=Europe%2FBerlin&forecast_days=3')
+weather_json = weather_data.json()
+sun_hours_tomorrow = weather_json["daily"]["sunshine_duration"][1] / 60/60
 
 # Daily aggregates
 summary = {
@@ -30,10 +36,9 @@ summary = {
     "export_ratio_pct": float(round(df['pv_to_grid_kw_opt'].sum() / df['pv_profile'].sum() * 100, 1)) if df['pv_profile'].sum() > 0 else 0.0,
     "battery_contribution_pct": float(round((df['battery_to_load_kw_opt'].sum() + df['battery_to_grid_kw_opt'].sum()) / df['net_load'].sum() * 100, 1)),
     "soc_swing": float(round(df['SOC_opt'].max() - df['SOC_opt'].min(), 2)),
-    "grid_dependence_pct": float(round(df['grid_import_kw_opt'].sum() / df['gross_load'].sum() * 100, 1))
+    "grid_dependence_pct": float(round(df['grid_import_kw_opt'].sum() / df['gross_load'].sum() * 100, 1)),
+    "sun_hours_tomorrow": sun_hours_tomorrow
 }
-
-
 
 print("Summary done")
 
@@ -50,6 +55,8 @@ For example:
 - how much money was saved or earned
 - how much energy was self-consumed versus exported
 - grid dependence percentage
+
+At the end include how many sun hours are expected tommorrow and how it will impact the energy consumptioin and prices.
 
 Make the summary 1–3 sentences long, include as many emojis as possible, 
 and keep it positive and easy to understand. Please use units and include quantity where possible.
