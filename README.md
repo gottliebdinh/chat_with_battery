@@ -1,29 +1,53 @@
-# chat_with_battery
+# 🔋 Battery Telegram Bot
 
-## Grundvoraussetzung: python 3 (mit pip lol)
+Ein intelligenter Telegram Bot für Batterie-Management mit AI-Integration.
 
-## Discord beitreten
-https://discord.gg/AejHQ4Eb
+## Features
 
-## requirements installieren:
+- 🤖 **Intelligenter AI-Chat** mit Anthropic Claude
+- 📊 **Automatische Charts** und Visualisierungen
+- ⚡ **Tägliche Reports** mit witzigen Updates
+- 🌤️ **Wetter-Integration** für Solar-Prognosen
+- 💰 **Wirtschaftlichkeits-Analysen**
 
-'
-pip install pandas json ollama matplotlib requests
-'
+## Setup
 
+### 1. Dependencies installieren
+```bash
+pip install python-telegram-bot anthropic pandas matplotlib requests
+```
 
-(Ganzer Ollama teil fällt weg, sobald wir nen OpenAI Api Key haben)
-## ollama runterladen 
-https://ollama.com
-dann modell runterladen: ich benutze aktuell gpt-oss, weil relativ gut und passt gut auf mein M2 max mit 64gb. Bei Macbook Air vllt eher für Demo einfach gemma:1b oder so benutzen.
+### 2. Environment Variables setzen
+```bash
+export TELEGRAM_BOT_TOKEN="your_telegram_bot_token"
+export ANTHROPIC_API_KEY="your_anthropic_api_key"
+```
 
-## modell laufen lassen
-dann in neuem terminal ollama öffnen
-'
-ollama serve
-'
-# ausführen
-'
-python dataclean.py
-'
-(modell sollte beim erstmaligen ausführen automatisch runtergeladen werden. Deswegen könnte es beim ersten Starten etwas dauern. Falls das nicht funktioniert: ollama pull gemma3:1b )
+### 3. Bot starten
+```bash
+python3 telegram_bot.py
+```
+
+## Kommandos
+
+- `/start` - Bot starten
+- `/daily` - Täglichen Report anfordern
+- `/status` - Aktuellen Batterie-Status abfragen
+- `/chart` - Batterie-Chart generieren
+- `/help` - Hilfe anzeigen
+
+## AI-Chat
+
+Der Bot versteht natürliche Sprache und kann Fragen zu deiner Batterie beantworten:
+
+- "Wie läuft meine Batterie heute?"
+- "Wann war der Strom am teuersten?"
+- "Wie viel Solar habe ich produziert?"
+
+## Daten
+
+Der Bot verwendet Batterie-Daten aus `data/day1.json` für Tests.
+
+## Sicherheit
+
+API Keys werden über Umgebungsvariablen gesetzt und nicht im Code gespeichert.
