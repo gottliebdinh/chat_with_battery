@@ -2,9 +2,8 @@ import pandas as pd
 import json
 import requests
 
-
-from ollama import chat
-from ollama import ChatResponse
+import os
+import anthropic
 
 
 # Load your JSON as DataFrame
@@ -69,12 +68,33 @@ Now write a natural-language summary and just return the summary text, without a
 """
 
 messages = []
-user_input = prompt.format(summary_json=summary)
+user_input = prompt.format(summary_json=json.dumps(summary, ensure_ascii=False))
 messages.append({'role': 'user', 'content': user_input})
 
 def get_response(messages):
-    response = chat(model='gpt-oss', messages=messages)
-    reply = response['message']['content']
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        raise RuntimeError('Missing ANTHROPIC_API_KEY environment variable')
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    response = client.messages.create(
+        model='claude-3-5-haiku-20241022',
+        max_tokens=300,
+        messages=messages
+    )
+
+    # Concatenate any returned text blocks
+    reply_parts = []
+    for block in response.content:
+        # block can be a dict-like or TextBlock; handle both
+        text = getattr(block, 'text', None)
+        if text is None and isinstance(block, dict):
+            text = block.get('text')
+        if text:
+            reply_parts.append(text)
+    reply = ''.join(reply_parts) if reply_parts else ''
+
     messages.append({'role': 'assistant', 'content': reply})
     return reply
 
