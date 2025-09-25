@@ -187,6 +187,30 @@ Lass uns deine Batterie optimieren! 💚
             df = pd.read_json("data/day1.json")
             df['timestamp'] = pd.to_datetime(df['timestamp'])
             
+            # Wetterdaten holen
+            try:
+                weather_data = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.1374&longitude=11.5755&daily=sunshine_duration,daylight_duration,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FBerlin&forecast_days=3')
+                weather_json = weather_data.json()
+                weather_info = {
+                    "sun_hours_today": weather_json["daily"]["sunshine_duration"][0] / 3600,
+                    "sun_hours_tomorrow": weather_json["daily"]["sunshine_duration"][1] / 3600,
+                    "max_temp_today": weather_json["daily"]["temperature_2m_max"][0],
+                    "min_temp_today": weather_json["daily"]["temperature_2m_min"][0],
+                    "max_temp_tomorrow": weather_json["daily"]["temperature_2m_max"][1],
+                    "precipitation_today": weather_json["daily"]["precipitation_sum"][0],
+                    "precipitation_tomorrow": weather_json["daily"]["precipitation_sum"][1]
+                }
+            except:
+                weather_info = {
+                    "sun_hours_today": 5.0,
+                    "sun_hours_tomorrow": 6.0,
+                    "max_temp_today": 20.0,
+                    "min_temp_today": 10.0,
+                    "max_temp_tomorrow": 22.0,
+                    "precipitation_today": 0.0,
+                    "precipitation_tomorrow": 0.0
+                }
+            
             # Erstelle Kontext aus Batterie-Daten
             context_data = {
                 "current_soc": df['SOC_opt'].iloc[-1],
@@ -212,9 +236,18 @@ AKTUELLE BATTERIE-DATEN:
 - Peak-Preis: {context_data['peak_price']:.3f}€/kWh um {context_data['peak_time']}
 - Netzabhängigkeit: {context_data['grid_dependence']:.1f}%
 
+AKTUELLE WETTER-DATEN:
+- Sonnenstunden heute: {weather_info['sun_hours_today']:.1f}h
+- Sonnenstunden morgen: {weather_info['sun_hours_tomorrow']:.1f}h
+- Temperatur heute: {weather_info['min_temp_today']:.1f}°C - {weather_info['max_temp_today']:.1f}°C
+- Temperatur morgen: {weather_info['max_temp_tomorrow']:.1f}°C
+- Niederschlag heute: {weather_info['precipitation_today']:.1f}mm
+- Niederschlag morgen: {weather_info['precipitation_tomorrow']:.1f}mm
+
 NUTZER-FRAGE: {user_message}
 
 Antworte freundlich, hilfreich und mit vielen Emojis. Erkläre Dinge einfach und verständlich. 
+Nutze die Wetterdaten um Zusammenhänge zwischen Wetter und Solar-Produktion zu erklären.
 Falls die Frage nichts mit der Batterie zu tun hat, erkläre höflich, dass du nur bei Batterie-Fragen helfen kannst.
 Antworte auf Deutsch und in 1-3 Sätzen.
             """
@@ -252,11 +285,29 @@ Antworte auf Deutsch und in 1-3 Sätzen.
             
             # Wetterdaten holen
             try:
-                weather_data = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.1374&longitude=11.5755&daily=sunshine_duration,daylight_duration&timezone=Europe%2FBerlin&forecast_days=3')
+                weather_data = requests.get('https://api.open-meteo.com/v1/forecast?latitude=48.1374&longitude=11.5755&daily=sunshine_duration,daylight_duration,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%2FBerlin&forecast_days=3')
                 weather_json = weather_data.json()
-                sun_hours_tomorrow = weather_json["daily"]["sunshine_duration"][1] / 60/60
+                sun_hours_tomorrow = weather_json["daily"]["sunshine_duration"][1] / 3600
+                weather_summary = {
+                    "sun_hours_today": weather_json["daily"]["sunshine_duration"][0] / 3600,
+                    "sun_hours_tomorrow": sun_hours_tomorrow,
+                    "max_temp_today": weather_json["daily"]["temperature_2m_max"][0],
+                    "min_temp_today": weather_json["daily"]["temperature_2m_min"][0],
+                    "max_temp_tomorrow": weather_json["daily"]["temperature_2m_max"][1],
+                    "precipitation_today": weather_json["daily"]["precipitation_sum"][0],
+                    "precipitation_tomorrow": weather_json["daily"]["precipitation_sum"][1]
+                }
             except:
                 sun_hours_tomorrow = 5.0  # Fallback
+                weather_summary = {
+                    "sun_hours_today": 5.0,
+                    "sun_hours_tomorrow": 6.0,
+                    "max_temp_today": 20.0,
+                    "min_temp_today": 10.0,
+                    "max_temp_tomorrow": 22.0,
+                    "precipitation_today": 0.0,
+                    "precipitation_tomorrow": 0.0
+                }
             
             # Zusammenfassung berechnen
             summary = {
@@ -283,7 +334,7 @@ Antworte auf Deutsch und in 1-3 Sätzen.
             }
             
             # AI-Text generieren
-            prompt = """
+            prompt = f"""
             You are an assistant that writes short, friendly and funny daily energy summaries for a solar+battery user. 
             Use the provided data to highlight what was interesting about the day. Do not use all the data, just the most interesting bits.
             For example:
@@ -295,6 +346,15 @@ Antworte auf Deutsch und in 1-3 Sätzen.
             - how much energy was self-consumed versus exported
             - grid dependence percentage
 
+            WEATHER CONTEXT:
+            - Today's sun hours: {weather_summary['sun_hours_today']:.1f}h
+            - Tomorrow's sun hours: {weather_summary['sun_hours_tomorrow']:.1f}h
+            - Today's temperature: {weather_summary['min_temp_today']:.1f}°C - {weather_summary['max_temp_today']:.1f}°C
+            - Tomorrow's temperature: {weather_summary['max_temp_tomorrow']:.1f}°C
+            - Today's precipitation: {weather_summary['precipitation_today']:.1f}mm
+            - Tomorrow's precipitation: {weather_summary['precipitation_tomorrow']:.1f}mm
+
+            Use the weather data to explain connections between weather and solar production.
             At the end include how many sun hours are expected tomorrow and how it will impact the energy consumption and prices.
 
             Make the summary 1–3 sentences long, include as many emojis as possible, 
@@ -302,7 +362,7 @@ Antworte auf Deutsch und in 1-3 Sätzen.
             Make it as fun as you can!
 
             Here is the data:
-            {summary_json}
+            {{summary_json}}
 
             Now write a natural-language summary and just return the summary text, without any extra commentary.
             """
