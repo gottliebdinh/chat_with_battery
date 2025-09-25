@@ -12,6 +12,10 @@ import matplotlib.pyplot as plt
 import anthropic
 from telegram import Bot, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from dotenv import load_dotenv
+
+# Lade Environment Variables
+load_dotenv()
 import asyncio
 from datetime import datetime
 
